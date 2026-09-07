@@ -303,6 +303,19 @@ document.getElementById('mini-logo').src = LOGO_B64;
 let itemSeq = 0;
 let currentId = null;
 
+// Usa o storage do Claude quando disponível (preview do chat); no site publicado
+// (Vercel/GitHub Pages) cai automaticamente pro localStorage do navegador.
+const hasClaudeStorage = (typeof window!=='undefined') && window.storage && typeof window.storage.get==='function';
+const dataStore = hasClaudeStorage ? {
+  get: (k)=>window.storage.get(k, false),
+  set: (k,v)=>window.storage.set(k, v, false),
+  delete: (k)=>window.storage.delete(k, false)
+} : {
+  get: async (k)=>{ const v = localStorage.getItem('lgf_'+k); return v===null ? null : {key:k, value:v}; },
+  set: async (k,v)=>{ localStorage.setItem('lgf_'+k, v); return {key:k, value:v}; },
+  delete: async (k)=>{ localStorage.removeItem('lgf_'+k); return {key:k, deleted:true}; }
+};
+
 let ITEM_SUGGESTIONS = [
   "Capacitor","Compressor","Gás R410A (carga)","Gás R22 (carga)","Filtro secador",
   "Placa eletrônica","Contatora","Disjuntor","Cabo PP 3x2,5mm","Cabo PP 4x1,5mm",
@@ -312,12 +325,12 @@ let ITEM_SUGGESTIONS = [
 ];
 async function loadSuggestions(){
   try{
-    const r = await window.storage.get('lgf:suggestions', false);
+    const r = await dataStore.get('lgf:suggestions');
     if(r) ITEM_SUGGESTIONS = JSON.parse(r.value);
   }catch(e){}
 }
 async function saveSuggestionsList(){
-  try{ await window.storage.set('lgf:suggestions', JSON.stringify(ITEM_SUGGESTIONS), false); }catch(e){}
+  try{ await dataStore.set('lgf:suggestions', JSON.stringify(ITEM_SUGGESTIONS)); }catch(e){}
 }
 
 const acBox = document.createElement('div');
@@ -600,15 +613,15 @@ function fillForm(o){
 }
 
 async function nextNumber(){
-  try{ const r = await window.storage.get('lgf:next-num', false); return r?parseInt(r.value,10):1; }
+  try{ const r = await dataStore.get('lgf:next-num'); return r?parseInt(r.value,10):1; }
   catch(e){ return 1; }
 }
-async function setNextNumber(n){ await window.storage.set('lgf:next-num', String(n), false); }
+async function setNextNumber(n){ await dataStore.set('lgf:next-num', String(n)); }
 async function getIndex(){
-  try{ const r = await window.storage.get('lgf:index', false); return r?JSON.parse(r.value):[]; }
+  try{ const r = await dataStore.get('lgf:index'); return r?JSON.parse(r.value):[]; }
   catch(e){ return []; }
 }
-async function setIndex(idx){ await window.storage.set('lgf:index', JSON.stringify(idx), false); }
+async function setIndex(idx){ await dataStore.set('lgf:index', JSON.stringify(idx)); }
 
 async function newOrcamento(){
   currentId = null;
@@ -639,7 +652,7 @@ async function saveOrcamento(){
     const existing = currentId ? idx.find(e=>e.id===currentId) : null;
     if(existing){ num = existing.num; } else { num = await nextNumber(); }
     const o = collectOrcamento(num);
-    await window.storage.set('lgf:orc:'+o.id, JSON.stringify(o), false);
+    await dataStore.set('lgf:orc:'+o.id, JSON.stringify(o), false);
     if(existing){
       existing.client = o.client; existing.total = o.total; existing.date = o.date;
     } else {
@@ -680,13 +693,13 @@ async function renderHistory(){
   });
 }
 async function openOrc(id){
-  const r = await window.storage.get('lgf:orc:'+id, false);
+  const r = await dataStore.get('lgf:orc:'+id, false);
   if(!r) return;
   fillForm(JSON.parse(r.value));
   showView('new');
 }
 async function duplicateOrc(id){
-  const r = await window.storage.get('lgf:orc:'+id, false);
+  const r = await dataStore.get('lgf:orc:'+id, false);
   if(!r) return;
   const o = JSON.parse(r.value);
   currentId = null;
@@ -702,7 +715,7 @@ async function deleteOrc(id){
   let idx = await getIndex();
   idx = idx.filter(e=>e.id!==id);
   await setIndex(idx);
-  try{ await window.storage.delete('lgf:orc:'+id, false); }catch(e){}
+  try{ await dataStore.delete('lgf:orc:'+id, false); }catch(e){}
   renderHistory();
 }
 function showView(v){
