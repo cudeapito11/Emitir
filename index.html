@@ -47,6 +47,7 @@
   .hdr-company .cname{font-weight:bold;font-size:13.5px;}
   .hdr-company .cline{font-size:10.5px;color:#333;margin-top:1px;}
   .hdr-company .cline input, .hdr-company .cline span.v{font:inherit;color:inherit;border:none;background:transparent;}
+  .hdr-company .cline input[readonly]{cursor:default;}
   .hdr-id{width:190px;flex-shrink:0;text-align:right;}
   .hdr-id .lbl{font-size:10px;}
   .hdr-id .lbl b{font-size:10px;}
@@ -170,7 +171,7 @@
         <div class="hdr-logo"><img id="logo-img" src="" alt="LGF Soluções"></div>
         <div class="hdr-company">
           <div class="cname">LGF SOLUÇÕES — AR-CONDICIONADO E ELÉTRICA</div>
-          <div class="cline">CNPJ: <input id="f-cnpj" placeholder="00.000.000/0000-00"></div>
+          <div class="cline">CNPJ: <input id="f-cnpj" value="50.278.529/0001-40" readonly></div>
           <div class="cline"><input id="f-company-address" value="Barreiras - BA"></div>
           <div class="cline">Fone/WhatsApp: <input id="f-phone" value="(77) 99937-7687"></div>
         </div>
@@ -596,7 +597,7 @@ function fillForm(o){
   document.getElementById('f-rgie').value = o.rgie||'';
   document.getElementById('f-cpfcnpj').value = o.cpfcnpj||'';
   document.getElementById('f-phone').value = o.phone||'(77) 99937-7687';
-  document.getElementById('f-cnpj').value = o.cnpj||'';
+  // CNPJ é fixo (não muda por orçamento salvo)
   document.getElementById('f-company-address').value = o.companyAddress||'';
   document.getElementById('f-vendedor').value = o.vendedor||'';
   document.getElementById('f-descgeral').value = o.descGeral||0;
