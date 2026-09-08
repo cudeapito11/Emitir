@@ -233,6 +233,7 @@
         <div class="foot-vendor">Vendedor: <input id="f-vendedor" placeholder="Nome do técnico/vendedor"></div>
         <div class="foot-totals">
           <div class="frow"><span>Total à Prazo:</span><span id="disp-subtotal">R$ 0,00</span></div>
+          <div class="frow" id="row-item-disc" style="display:none;color:#555;font-size:10px;"><span>(desconto nos itens já incluso)</span><span id="disp-itemdisc">R$ 0,00</span></div>
           <div class="frow"><span>Desconto:</span><input class="num" id="f-descgeral" value="0" oninput="recalc()"></div>
           <div class="frow"><span>Acréscimo:</span><input class="num" id="f-acresc" value="0" oninput="recalc()"></div>
           <div class="frow grand"><span>Total Geral:</span><span id="disp-total">R$ 0,00</span></div>
@@ -520,11 +521,19 @@ function onPayChange(){
 function recalc(){
   const items = readItems();
   const subtotal = items.reduce((s,i)=>s+i.total,0);
+  const itemDiscSum = items.reduce((s,i)=>s+i.descTotal,0);
   const descGeral = parseBR(document.getElementById('f-descgeral').value);
   const acresc = parseBR(document.getElementById('f-acresc').value);
   const total = subtotal - descGeral + acresc;
   document.getElementById('disp-subtotal').textContent = fmtMoney(subtotal);
   document.getElementById('disp-total').textContent = fmtMoney(total);
+  const itemDiscRow = document.getElementById('row-item-disc');
+  if(itemDiscSum>0.004){
+    itemDiscRow.style.display = 'flex';
+    document.getElementById('disp-itemdisc').textContent = '-'+fmtMoney(itemDiscSum);
+  } else {
+    itemDiscRow.style.display = 'none';
+  }
 
   const fee = getFeeInfo();
   const feeValue = fee.pct ? total*fee.pct/100 : 0;
@@ -543,7 +552,7 @@ function recalc(){
     totalFeeRow.style.display = 'none';
     document.getElementById('pay-amount').textContent = fmtMoney(total);
   }
-  return {items,subtotal,descGeral,acresc,total,feePct:fee.pct,feeLabel:fee.label,feeValue,totalWithFee};
+  return {items,subtotal,itemDiscSum,descGeral,acresc,total,feePct:fee.pct,feeLabel:fee.label,feeValue,totalWithFee};
 }
 
 function collectOrcamento(num){
@@ -568,6 +577,7 @@ function collectOrcamento(num){
     vendedor: document.getElementById('f-vendedor').value,
     items: calc.items,
     subtotal: calc.subtotal,
+    itemDiscSum: calc.itemDiscSum,
     descGeral: calc.descGeral,
     acresc: calc.acresc,
     total: calc.total,
@@ -822,6 +832,7 @@ function downloadPrintable(){
       <div class="foot-vendor">Vendedor: ${escapeAttr(o.vendedor)}</div>
       <div class="foot-totals">
         <div class="frow"><span>Total à Prazo:</span><span>${fmtMoney(o.subtotal)}</span></div>
+        ${o.itemDiscSum>0.004 ? `<div class="frow" style="color:#555;font-size:10px;"><span>(desconto nos itens já incluso)</span><span>-${fmtMoney(o.itemDiscSum)}</span></div>` : ''}
         <div class="frow"><span>Desconto:</span><span>${fmtMoney(o.descGeral)}</span></div>
         <div class="frow"><span>Acréscimo:</span><span>${fmtMoney(o.acresc)}</span></div>
         <div class="frow grand"><span>Total Geral:</span><span>${fmtMoney(o.total)}</span></div>
