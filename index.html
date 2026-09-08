@@ -233,7 +233,7 @@
         <div class="foot-vendor">Vendedor: <input id="f-vendedor" placeholder="Nome do técnico/vendedor"></div>
         <div class="foot-totals">
           <div class="frow"><span>Total à Prazo:</span><span id="disp-subtotal">R$ 0,00</span></div>
-          <div class="frow"><span>Desconto:</span><input class="num" id="f-descgeral" value="0" oninput="recalc()"></div>
+          <div class="frow"><span>Desconto:</span><span id="disp-descgeral">R$ 0,00</span></div>
           <div class="frow"><span>Acréscimo:</span><input class="num" id="f-acresc" value="0" oninput="recalc()"></div>
           <div class="frow grand"><span>Total Geral:</span><span id="disp-total">R$ 0,00</span></div>
         </div>
@@ -519,12 +519,14 @@ function onPayChange(){
 }
 function recalc(){
   const items = readItems();
-  const subtotal = items.reduce((s,i)=>s+i.total,0);
-  const descGeral = parseBR(document.getElementById('f-descgeral').value);
+  const subtotalBruto = items.reduce((s,i)=>s+i.bruto,0);
+  const descGeral = items.reduce((s,i)=>s+i.descTotal,0);
   const acresc = parseBR(document.getElementById('f-acresc').value);
-  const total = subtotal - descGeral + acresc;
-  document.getElementById('disp-subtotal').textContent = fmtMoney(subtotal);
+  const total = subtotalBruto - descGeral + acresc;
+  document.getElementById('disp-subtotal').textContent = fmtMoney(subtotalBruto);
+  document.getElementById('disp-descgeral').textContent = fmtMoney(descGeral);
   document.getElementById('disp-total').textContent = fmtMoney(total);
+  const subtotal = subtotalBruto;
 
   const fee = getFeeInfo();
   const feeValue = fee.pct ? total*fee.pct/100 : 0;
@@ -600,7 +602,7 @@ function fillForm(o){
   // CNPJ é fixo (não muda por orçamento salvo)
   document.getElementById('f-company-address').value = o.companyAddress||'';
   document.getElementById('f-vendedor').value = o.vendedor||'';
-  document.getElementById('f-descgeral').value = o.descGeral||0;
+  // Desconto é automático (soma dos itens) — recalculado abaixo
   document.getElementById('f-acresc').value = o.acresc||0;
   document.getElementById('f-obs').value = o.obs||'';
   document.getElementById('f-pay').value = o.pay||'DINHEIRO';
@@ -629,7 +631,7 @@ async function newOrcamento(){
   document.getElementById('items-body').innerHTML = '';
   ['f-client','f-address','f-bairro','f-email','f-fone','f-fax','f-celular','f-rgie','f-cpfcnpj','f-vendedor','f-obs'].forEach(id=>document.getElementById(id).value='');
   document.getElementById('f-city').value='Barreiras - BA';
-  document.getElementById('f-descgeral').value=0;
+  
   document.getElementById('f-acresc').value=0;
   document.getElementById('f-pay').value='DINHEIRO';
   document.getElementById('f-installments').value='1';
